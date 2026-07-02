@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sảnh Vàng — Quản lý khách sạn</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ============ MÀN HÌNH ĐĂNG NHẬP ============ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="brand-mark">SV</span>
+      <div>
+        <h1>Sảnh Vàng</h1>
+        <p>Hệ thống quản lý khách sạn</p>
+      </div>
+    </div>
+    <form id="login-form">
+      <label>Tên đăng nhập
+        <input type="text" id="login-username" required autocomplete="username" />
+      </label>
+      <label>Mật khẩu
+        <input type="password" id="login-password" required autocomplete="current-password" />
+      </label>
+      <p id="login-error" class="error-text" hidden></p>
+      <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+    </form>
+    <p class="login-hint">Tài khoản mặc định: <code>admin / admin123</code> (đổi trong file .env)</p>
+  </div>
+</div>
+
+<!-- ============ ỨNG DỤNG CHÍNH ============ -->
+<div id="app" class="app-shell" hidden>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">SV</span>
+      <span class="brand-name">Sảnh Vàng</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard">Tổng quan</button>
+      <button class="nav-item" data-view="rooms">Phòng</button>
+      <button class="nav-item" data-view="bookings">Đặt phòng</button>
+      <button class="nav-item" data-view="customers">Khách hàng</button>
+      <button class="nav-item" data-view="room-types">Loại phòng</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <span id="user-name">—</span>
+        <button id="logout-btn" title="Đăng xuất">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <h2 id="view-title">Tổng quan</h2>
+      <div id="topbar-actions"></div>
+    </header>
+
+    <section id="toast" class="toast" hidden></section>
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="stat-label">Tổng số phòng</span>
+          <span class="stat-value" id="stat-total-rooms">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Phòng trống</span>
+          <span class="stat-value" id="stat-rooms-free">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Đặt phòng đang hoạt động</span>
+          <span class="stat-value" id="stat-active-bookings">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Doanh thu tháng này</span>
+          <span class="stat-value" id="stat-revenue">0 ₫</span>
+        </div>
+      </div>
+      <div class="panel-grid">
+        <div class="panel">
+          <h3>Trạng thái phòng</h3>
+          <div id="room-status-bars" class="status-bars"></div>
+        </div>
+        <div class="panel">
+          <h3>Hôm nay</h3>
+          <ul class="today-list">
+            <li>Nhận phòng dự kiến: <strong id="stat-checkins">0</strong></li>
+            <li>Trả phòng dự kiến: <strong id="stat-checkouts">0</strong></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- PHÒNG -->
+    <section id="view-rooms" class="view" hidden>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Số phòng</th><th>Loại phòng</th><th>Tầng</th><th>Trạng thái</th><th>Giá cơ bản</th><th>Ghi chú</th><th></th>
+          </tr></thead>
+          <tbody id="rooms-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ĐẶT PHÒNG -->
+    <section id="view-bookings" class="view" hidden>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Mã đặt phòng</th><th>Khách hàng</th><th>Phòng</th><th>Nhận phòng</th><th>Trả phòng</th><th>Trạng thái</th><th>Tổng tiền</th><th></th>
+          </tr></thead>
+          <tbody id="bookings-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- KHÁCH HÀNG -->
+    <section id="view-customers" class="view" hidden>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Họ tên</th><th>Điện thoại</th><th>Email</th><th>CMND/CCCD</th><th>Địa chỉ</th><th></th>
+          </tr></thead>
+          <tbody id="customers-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LOẠI PHÒNG -->
+    <section id="view-room-types" class="view" hidden>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Tên loại phòng</th><th>Mô tả</th><th>Giá cơ bản / đêm</th><th>Số khách tối đa</th><th></th>
+          </tr></thead>
+          <tbody id="room-types-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ MODAL DÙNG CHUNG ============ -->
+<div id="modal-backdrop" class="modal-backdrop" hidden>
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
