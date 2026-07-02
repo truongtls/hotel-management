@@ -43,7 +43,7 @@ services:
     container_name: hotel_frontend
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${WEB_PORT:-8081}:80"
     depends_on:
       - backend
     networks:
