@@ -1,4 +1,4 @@
-# Sảnh Vàng — Hệ thống quản lý khách sạn
+# Hotel — Hệ thống quản lý khách sạn
 
 Ứng dụng web quản lý khách sạn: quản lý phòng, loại phòng, khách hàng, đặt phòng
 (nhận phòng / trả phòng / hủy), thanh toán và dashboard thống kê. Triển khai hoàn
@@ -18,7 +18,7 @@ frontend/   (Dockerfile, Nginx, giao diện web)
 
 ## Cách chạy
 
-1. Cài [Docker](https://docs.docker.com/get-docker/) và Docker Compose (đã tích hợp sẵn trong Docker Desktop).
+1. Cài [Docker] và Docker Compose.
 2. Sao chép file cấu hình mẫu và chỉnh sửa nếu cần:
    ```bash
    cp .env.example .env
@@ -57,10 +57,7 @@ docker compose down -v
 - **Dashboard**: tổng số phòng, tỉ lệ trạng thái phòng, số đặt phòng đang hoạt
   động, doanh thu tháng hiện tại, số lượt nhận/trả phòng dự kiến hôm nay.
 
-## Dữ liệu mẫu
 
-`backend/db/init.sql` tạo sẵn 4 loại phòng và 10 phòng mẫu để bạn có thể dùng thử
-ngay sau khi khởi động.
 
 ## Sao lưu / phục hồi database
 
