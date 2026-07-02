@@ -4,7 +4,7 @@
 (nhận phòng / trả phòng / hủy), thanh toán và dashboard thống kê. Triển khai hoàn
 toàn bằng Docker.
 
-## Kiến trúc
+## Kiến trúc.
 
 - **frontend** — HTML/CSS/JS thuần, phục vụ qua Nginx (proxy `/api` sang backend)
 - **backend** — Node.js + Express, REST API, xác thực bằng JWT
