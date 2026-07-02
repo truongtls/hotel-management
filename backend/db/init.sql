@@ -95,8 +95,6 @@ ON CONFLICT DO NOTHING;
 -- Ghi chú: tài khoản admin mặc định (username/password lấy từ biến môi trường
 -- ADMIN_USERNAME/ADMIN_PASSWORD) sẽ được tạo tự động bởi backend khi khởi động
 -- lần đầu tiên (xem backend/src/db.js), không tạo cứng ở đây để tránh lệch hash.
-
-
 -- ==========================================================
 -- THÊM DỮ LIỆU MẪU: KHÁCH HÀNG, ĐẶT PHÒNG, THANH TOÁN
 -- ==========================================================

@@ -24,6 +24,42 @@ router.get('/', async (req, res) => {
   res.json(rows);
 });
 
+// Trả về danh sách phòng còn trống trong khoảng ngày cụ thể (không tính phòng
+// đang bảo trì, và loại trừ phòng đã có đặt chỗ khác bị trùng ngày).
+// Đặt route này TRƯỚC '/:id' để "available" không bị hiểu nhầm là :id.
+router.get('/available', async (req, res) => {
+  const { check_in_date, check_out_date, exclude_booking_id } = req.query;
+  if (!check_in_date || !check_out_date) {
+    return res.status(400).json({ error: 'Thiếu ngày nhận phòng hoặc ngày trả phòng.' });
+  }
+  if (new Date(check_out_date) <= new Date(check_in_date)) {
+    return res.status(400).json({ error: 'Ngày trả phòng phải sau ngày nhận phòng.' });
+  }
+
+  const params = [check_in_date, check_out_date];
+  let excludeClause = '';
+  if (exclude_booking_id) {
+    params.push(exclude_booking_id);
+    excludeClause = `AND b.id != $${params.length}`;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT r.*, rt.name AS room_type_name, rt.base_price
+     FROM rooms r
+     LEFT JOIN room_types rt ON rt.id = r.room_type_id
+     WHERE r.status != 'bao_tri'
+     AND r.id NOT IN (
+       SELECT b.room_id FROM bookings b
+       WHERE b.status IN ('dat_truoc','da_nhan_phong')
+       AND daterange(b.check_in_date, b.check_out_date) && daterange($1::date, $2::date)
+       ${excludeClause}
+     )
+     ORDER BY r.room_number`,
+    params
+  );
+  res.json(rows);
+});
+
 router.get('/:id', async (req, res) => {
   const { rows } = await pool.query(
     `SELECT r.*, rt.name AS room_type_name, rt.base_price

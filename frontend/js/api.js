@@ -28,6 +28,11 @@ const api = {
     apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
 
   getRooms: (status) => apiRequest(`/rooms${status ? `?status=${status}` : ''}`),
+  getAvailableRooms: (checkIn, checkOut, excludeBookingId) => {
+    const params = new URLSearchParams({ check_in_date: checkIn, check_out_date: checkOut });
+    if (excludeBookingId) params.set('exclude_booking_id', excludeBookingId);
+    return apiRequest(`/rooms/available?${params.toString()}`);
+  },
   createRoom: (payload) => apiRequest('/rooms', { method: 'POST', body: JSON.stringify(payload) }),
   updateRoom: (id, payload) => apiRequest(`/rooms/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteRoom: (id) => apiRequest(`/rooms/${id}`, { method: 'DELETE' }),

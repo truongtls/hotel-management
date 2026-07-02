@@ -19,7 +19,12 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Đảm bảo thuộc tính [hidden] luôn thắng các rule display:flex/block bên dưới
+   (ví dụ .modal-backdrop, .app-shell đều đặt display:flex nên nếu không có
+   dòng này, phần tử có hidden vẫn hiển thị ra màn hình). */
 [hidden] { display: none !important; }
+
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;

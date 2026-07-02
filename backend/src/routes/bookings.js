@@ -93,7 +93,21 @@ router.post('/', async (req, res) => {
       [code, customer_id, room_id, check_in_date, check_out_date, totalAmount, deposit || 0, notes || null, req.user.id]
     );
 
-    await client.query(`UPDATE rooms SET status='dat_truoc' WHERE id=$1`, [room_id]);
+    // Ghi chú: KHÔNG đổi trạng thái phòng thành 'dat_truoc' ở đây nữa.
+    // Trạng thái phòng (rooms.status) chỉ phản ánh tình trạng THỰC TẾ ngay lúc
+    // này (trống / đang sử dụng / bảo trì) - việc phòng đã có ai đặt trước hay
+    // chưa được xác định bằng cách so ngày trong bảng bookings (xem route
+    // GET /rooms/available). Nhờ vậy một phòng có thể được đặt trước cho
+    // nhiều khoảng ngày khác nhau trong tương lai, miễn không trùng ngày.
+
+    // Nếu có tiền đặt cọc, tự động ghi nhận luôn thành 1 khoản thanh toán đầu
+    // tiên để nó được trừ vào tổng tiền phải thanh toán sau này.
+    if (deposit && Number(deposit) > 0) {
+      await client.query(
+        `INSERT INTO payments (booking_id, amount, payment_method, notes) VALUES ($1,$2,'dat_coc',$3)`,
+        [bookingRes.rows[0].id, deposit, 'Tiền đặt cọc lúc tạo đặt phòng']
+      );
+    }
 
     await client.query('COMMIT');
     res.status(201).json(bookingRes.rows[0]);

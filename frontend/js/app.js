@@ -436,13 +436,20 @@ async function loadBookings() {
   `).join('');
 }
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 async function openBookingForm() {
   if (customersCache.length === 0) customersCache = await api.getCustomers();
-  const freeRooms = await api.getRooms('trong');
-  if (freeRooms.length === 0) roomTypesCache = roomTypesCache.length ? roomTypesCache : await api.getRoomTypes();
-
   const customerOptions = customersCache.map((c) => `<option value="${c.id}">${c.full_name} — ${c.phone || 'không có SĐT'}</option>`).join('');
-  const roomOptions = freeRooms.map((r) => `<option value="${r.id}">${r.room_number} — ${r.room_type_name} (${formatMoney(r.base_price)}/đêm)</option>`).join('');
+
+  // Mặc định gợi ý nhận phòng hôm nay, trả phòng ngày mai — người dùng có thể
+  // đổi sang bất kỳ ngày nào trong tương lai (đặt trước nhiều ngày vẫn được).
+  const defaultCheckIn = todayStr();
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const defaultCheckOut = tomorrow.toISOString().slice(0, 10);
 
   openModal(`
     <h3>Tạo đặt phòng mới</h3>
@@ -453,28 +460,84 @@ async function openBookingForm() {
           ${customerOptions}
         </select>
       </label>
-      <label>Phòng (chỉ hiện phòng đang trống)
-        <select name="room_id" required>
-          <option value="">— Chọn phòng —</option>
-          ${roomOptions || ''}
+      <label>Ngày nhận phòng
+        <input type="date" name="check_in_date" id="bf-checkin" min="${todayStr()}" value="${defaultCheckIn}" required />
+      </label>
+      <label>Ngày trả phòng
+        <input type="date" name="check_out_date" id="bf-checkout" min="${defaultCheckOut}" value="${defaultCheckOut}" required />
+      </label>
+      <label>Phòng
+        <select name="room_id" id="bf-room" required>
+          <option value="">Đang tải danh sách phòng trống…</option>
         </select>
       </label>
-      ${freeRooms.length === 0 ? '<p class="error-text">Hiện không còn phòng trống nào.</p>' : ''}
-      <label>Ngày nhận phòng <input type="date" name="check_in_date" required /></label>
-      <label>Ngày trả phòng <input type="date" name="check_out_date" required /></label>
-      <label>Tiền đặt cọc (VNĐ) <input type="number" name="deposit" min="0" value="0" /></label>
+      <p id="bf-room-hint" class="error-text" hidden></p>
+      <label>Tiền đặt cọc (VNĐ)
+        <input type="number" name="deposit" min="0" value="0" />
+      </label>
+      <p style="font-size:12px;color:var(--text-muted);margin:-8px 0 0;">
+        Tiền cọc sẽ được tự động trừ vào tổng tiền phải thanh toán.
+      </p>
       <label>Ghi chú <textarea name="notes" rows="2"></textarea></label>
       <div class="modal-actions">
         <button type="button" class="btn btn-outline" onclick="closeModal()">Hủy</button>
-        <button type="submit" class="btn btn-primary" ${freeRooms.length === 0 || customersCache.length === 0 ? 'disabled' : ''}>Tạo đặt phòng</button>
+        <button type="submit" class="btn btn-primary" id="bf-submit">Tạo đặt phòng</button>
       </div>
     </form>
     ${customersCache.length === 0 ? '<p class="error-text" style="margin-top:8px;">Bạn cần thêm khách hàng trước khi tạo đặt phòng.</p>' : ''}
   `);
 
+  const checkinInput = document.getElementById('bf-checkin');
+  const checkoutInput = document.getElementById('bf-checkout');
+  const roomSelect = document.getElementById('bf-room');
+  const roomHint = document.getElementById('bf-room-hint');
+  const submitBtn = document.getElementById('bf-submit');
+
+  async function refreshAvailableRooms() {
+    const checkIn = checkinInput.value;
+    const checkOut = checkoutInput.value;
+    roomHint.hidden = true;
+    if (!checkIn || !checkOut) return;
+
+    // Ngày trả phải sau ngày nhận; tự điều chỉnh min của ô ngày trả
+    checkoutInput.min = checkIn;
+    if (checkOut <= checkIn) {
+      const next = new Date(checkIn);
+      next.setDate(next.getDate() + 1);
+      checkoutInput.value = next.toISOString().slice(0, 10);
+    }
+
+    roomSelect.innerHTML = '<option value="">Đang tải danh sách phòng trống…</option>';
+    submitBtn.disabled = true;
+    try {
+      const rooms = await api.getAvailableRooms(checkinInput.value, checkoutInput.value);
+      if (rooms.length === 0) {
+        roomSelect.innerHTML = '<option value="">Không còn phòng trống cho khoảng ngày này</option>';
+        roomHint.textContent = 'Không còn phòng trống cho khoảng ngày đã chọn. Hãy thử đổi ngày hoặc chọn phòng khác.';
+        roomHint.hidden = false;
+        submitBtn.disabled = true;
+      } else {
+        roomSelect.innerHTML = '<option value="">— Chọn phòng —</option>' +
+          rooms.map((r) => `<option value="${r.id}">${r.room_number} — ${r.room_type_name || 'Chưa gán loại phòng'} (${formatMoney(r.base_price)}/đêm)</option>`).join('');
+        submitBtn.disabled = customersCache.length === 0;
+      }
+    } catch (err) {
+      handleError(err);
+      roomSelect.innerHTML = '<option value="">Lỗi khi tải danh sách phòng</option>';
+    }
+  }
+
+  checkinInput.addEventListener('change', refreshAvailableRooms);
+  checkoutInput.addEventListener('change', refreshAvailableRooms);
+  await refreshAvailableRooms();
+
   document.getElementById('booking-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
+    if (!fd.get('room_id')) {
+      showToast('Vui lòng chọn phòng còn trống.', 'error');
+      return;
+    }
     const payload = {
       customer_id: Number(fd.get('customer_id')),
       room_id: Number(fd.get('room_id')),
